@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Prompt Manager</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="container">
+  <h1>Prompts</h1>
+  <form id="new-prompt-form">
+    <input id="title" type="text" placeholder="Title" required>
+    <textarea id="content" placeholder="Content" required></textarea>
+    <button type="submit">Add</button>
+  </form>
+  <ul id="prompt-list"></ul>
+</div>
+<script>
+async function loadPrompts() {
+  const res = await fetch('/prompts');
+  const data = await res.json();
+  const list = document.getElementById('prompt-list');
+  list.innerHTML = '';
+  data.forEach(p => {
+    const li = document.createElement('li');
+    li.textContent = p.title + ': ' + p.content;
+    li.onclick = () => editPrompt(p);
+    list.appendChild(li);
+  });
+}
+
+async function createPrompt(prompt) {
+  await fetch('/prompts', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(prompt)
+  });
+  loadPrompts();
+}
+
+function editPrompt(p) {
+  const title = prompt('Edit title', p.title);
+  const content = prompt('Edit content', p.content);
+  if (title !== null && content !== null) {
+    fetch('/prompts/' + p.id, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({title, content})
+    }).then(loadPrompts);
+  }
+}
+
+document.getElementById('new-prompt-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const title = document.getElementById('title').value;
+  const content = document.getElementById('content').value;
+  createPrompt({title, content});
+  e.target.reset();
+});
+
+loadPrompts();
+</script>
+</body>
+</html>
